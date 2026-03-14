@@ -5,22 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Miguel Pro | Barber Management</title>
     
+    <link rel="manifest" href="manifest.json">
 
-
-<link rel="manifest" href="manifest.json">
-
-<script>
-  if ('serviceWorker' in navigator) {
-    
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log("PWA Admin (Miguel Pro) Ativo!"))
-      .catch(err => console.log("Erro no PWA do Admin:", err));
-  }
-</script>
-
-
-
-
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log("PWA Admin (Miguel Pro) Ativo!"))
+          .catch(err => console.log("Erro no PWA do Admin:", err));
+      }
+    </script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -41,7 +34,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { background: var(--dark-bg); color: white; min-height: 100vh; display: flex; }
 
-       
         #login-overlay {
             position: fixed; inset: 0; background: #000; z-index: 10000;
             display: flex; align-items: center; justify-content: center;
@@ -52,7 +44,6 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
         .login-card i.fa-crown { font-size: 4rem; color: var(--gold); margin-bottom: 20px; }
-        
         
         .password-container {
             position: relative;
@@ -80,9 +71,7 @@
             cursor: pointer;
             font-size: 1.1rem;
         }
-        .password-container .toggle-password:hover { color: var(--gold); }
 
-        
         #sidebar {
             width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border);
             display: none; flex-direction: column; padding: 30px 20px; position: fixed; height: 100vh;
@@ -124,7 +113,6 @@
         }
         .btn-check { background: var(--success); color: #000; }
         .btn-trash { background: rgba(255, 77, 77, 0.1); color: var(--error); border: 1px solid var(--error); }
-        .btn-trash:hover { background: var(--error); color: white; }
 
         .finance-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: var(--card-bg); border-radius: 20px; overflow: hidden; }
         .finance-table th { background: #1f1f1f; padding: 15px; text-align: left; color: var(--gold); font-size: 0.9rem; }
@@ -136,16 +124,14 @@
             width: 100%; padding: 15px; background: #000; border: 1px solid #333; 
             color: white; border-radius: 12px; margin-bottom: 15px; outline: none; transition: 0.3s;
         }
-        input:focus { border-color: var(--gold); }
         .primary-btn { 
             background: var(--gold); color: #000; width: 100%; padding: 15px; 
             border-radius: 12px; border: none; font-weight: 800; cursor: pointer;
             text-transform: uppercase;
         }
 
-        .error-msg { color: var(--error); font-size: 0.85rem; margin-bottom: 15px; display: none; animation: shake 0.3s; }
+        .error-msg { color: var(--error); font-size: 0.85rem; margin-bottom: 15px; display: none; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 
         @media (max-width: 900px) {
             #sidebar { width: 80px; padding: 20px 10px; }
@@ -244,18 +230,37 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-   const firebaseConfig = {
-  apiKey: "AIzaSyA4sfH02qz0XLzdFnQpQv8SHzOvZcSb0U4",
-  authDomain: "barbearia-do-miguel.firebaseapp.com",
-  projectId: "barbearia-do-miguel",
-  storageBucket: "barbearia-do-miguel.firebasestorage.app",
-  messagingSenderId: "271858732751",
-  appId: "1:271858732751:web:661f53eea67e3870daf1ba"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4sfH02qz0XLzdFnQpQv8SHzOvZcSb0U4",
+            authDomain: "barbearia-do-miguel.firebaseapp.com",
+            projectId: "barbearia-do-miguel",
+            storageBucket: "barbearia-do-miguel.firebasestorage.app",
+            messagingSenderId: "271858732751",
+            appId: "1:271858732751:web:661f53eea67e3870daf1ba"
+        };
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        
+        // --- FUNÇÕES GLOBAIS (DENTRO DO WINDOW PARA O HTML ENXERGAR) ---
+        window.showSection = (id, el) => {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(el) el.classList.add('active');
+        };
+
+        window.finalizarCorte = async (id) => {
+            await updateDoc(doc(db, "agendamentos", id), { status: "concluido" });
+        };
+
+        window.cancelarCorte = async (id) => {
+            if(confirm("Liberar este horário?")) {
+                await deleteDoc(doc(db, "agendamentos", id));
+            }
+        };
+
+        // --- LOGIN E DASHBOARD ---
         const passInput = document.getElementById('pass-input');
         const toggleEye = document.getElementById('toggleEye');
 
@@ -266,15 +271,6 @@
             toggleEye.classList.toggle('fa-eye-slash');
         });
 
-        
-        window.showSection = (id, el) => {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            el.classList.add('active');
-        };
-
-        
         document.getElementById('login-btn').addEventListener('click', () => {
             if(passInput.value === "barbearia26") {
                 document.getElementById('login-overlay').style.display = 'none';
@@ -293,15 +289,19 @@
                 const lista = document.getElementById('lista-agendamentos');
                 const tabela = document.getElementById('tabela-faturamento');
                 lista.innerHTML = ""; tabela.innerHTML = "";
+                
                 let pendentes = 0, hojeCount = 0, totalGeral = 0, totalHoje = 0;
                 const hojeStr = new Date().toLocaleDateString('pt-BR');
-                snapshot.forEach((snapshotDoc) => {
-                    const ag = snapshotDoc.data();
-                    const id = snapshotDoc.id;
-                    const valorNum = parseFloat(ag.valor.replace("R$ ","").replace(",","."));
+
+                snapshot.forEach((doc) => {
+                    const ag = doc.data();
+                    const id = doc.id;
+                    const valorLimpo = ag.valor ? ag.valor.replace("R$ ","").replace(",",".").trim() : "0";
+                    const valorNum = parseFloat(valorLimpo) || 0;
+
                     if(ag.status === "concluido") {
                         totalGeral += valorNum;
-                        tabela.innerHTML += `<tr><td>${ag.cliente}</td><td>${ag.data}</td><td>${ag.servico}</td><td style="color:var(--success)">R$ ${valorNum.toFixed(2)}</td></tr>`;
+                        tabela.innerHTML += `<tr><td>${ag.cliente}</td><td>${ag.data}</td><td>${ag.servico}</td><td style="color:var(--success)">R$ ${valorNum.toFixed(2).replace(".",",")}</td></tr>`;
                     } else {
                         pendentes++;
                         if(ag.data === hojeStr) { hojeCount++; totalHoje += valorNum; }
@@ -333,9 +333,6 @@
             await addDoc(collection(db, "agendamentos"), { cliente: "INDISPONÍVEL", data: dataFmt, hora: hora, tipo: "bloqueio", status: "pendente", valor: "R$ 0,00" });
             alert("Bloqueado!");
         });
-
-        window.finalizarCorte = async (id) => await updateDoc(doc(db, "agendamentos", id), { status: "concluido" });
-        window.cancelarCorte = async (id) => confirm("Liberar horário?") && await deleteDoc(doc(db, "agendamentos", id));
     </script>
 </body>
 </html>
