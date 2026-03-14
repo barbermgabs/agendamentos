@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miguel Pro | Barber Management</title>
+    
+
+
+<link rel="manifest" href="manifest.json">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log("PWA Admin (Miguel Pro) Ativo!"))
+      .catch(err => console.log("Erro no PWA do Admin:", err));
+  }
+</script>
+
+
+
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --gold: #d4af37;
+            --gold-light: #f1d592;
+            --dark-bg: #0a0a0a;
+            --sidebar-bg: #111;
+            --card-bg: #181818;
+            --border: rgba(212, 175, 55, 0.15);
+            --success: #25d366;
+            --error: #ff4d4d;
+            --text-muted: #888;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: var(--dark-bg); color: white; min-height: 100vh; display: flex; }
+
+       
+        #login-overlay {
+            position: fixed; inset: 0; background: #000; z-index: 10000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .login-card {
+            background: var(--sidebar-bg); padding: 50px; border-radius: 30px;
+            border: 1px solid var(--border); text-align: center; width: 90%; max-width: 400px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .login-card i.fa-crown { font-size: 4rem; color: var(--gold); margin-bottom: 20px; }
+        
+        
+        .password-container {
+            position: relative;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .password-container input {
+            width: 100%;
+            padding: 15px;
+            padding-right: 45px; 
+            background: #000;
+            border: 1px solid #333;
+            color: white;
+            border-radius: 12px;
+            outline: none;
+            transition: 0.3s;
+            text-align: center;
+        }
+        .password-container .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+        .password-container .toggle-password:hover { color: var(--gold); }
+
+        
+        #sidebar {
+            width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border);
+            display: none; flex-direction: column; padding: 30px 20px; position: fixed; height: 100vh;
+        }
+        .nav-link {
+            padding: 15px; color: var(--text-muted); text-decoration: none;
+            display: flex; align-items: center; gap: 15px; border-radius: 12px;
+            margin-bottom: 10px; transition: 0.3s; cursor: pointer; font-weight: 500;
+        }
+        .nav-link:hover, .nav-link.active { background: rgba(212, 175, 55, 0.1); color: var(--gold); }
+
+        #main-wrapper { flex: 1; margin-left: 260px; padding: 40px; display: none; }
+        .view-section { display: none; animation: fadeIn 0.4s ease; }
+        .view-section.active { display: block; }
+
+        .header-main { margin-bottom: 40px; }
+        .header-main h1 { font-family: 'Montserrat'; font-size: 1.8rem; letter-spacing: -1px; }
+
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .stat-card { 
+            background: var(--card-bg); padding: 25px; border-radius: 20px; 
+            border: 1px solid var(--border); position: relative; overflow: hidden;
+        }
+        .stat-card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: var(--gold); opacity: 0.3; }
+        .stat-card h3 { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card p { font-size: 2rem; font-weight: 800; color: #fff; margin-top: 5px; }
+
+        .booking-item {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px;
+            padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .client-meta b { font-size: 1.2rem; display: block; margin-bottom: 4px; }
+        .client-meta span { color: var(--gold); background: rgba(212, 175, 55, 0.1); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+        
+        .action-btns { display: flex; gap: 10px; }
+        .circle-btn { 
+            width: 45px; height: 45px; border-radius: 50%; border: none; 
+            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s;
+        }
+        .btn-check { background: var(--success); color: #000; }
+        .btn-trash { background: rgba(255, 77, 77, 0.1); color: var(--error); border: 1px solid var(--error); }
+        .btn-trash:hover { background: var(--error); color: white; }
+
+        .finance-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: var(--card-bg); border-radius: 20px; overflow: hidden; }
+        .finance-table th { background: #1f1f1f; padding: 15px; text-align: left; color: var(--gold); font-size: 0.9rem; }
+        .finance-table td { padding: 15px; border-bottom: 1px solid #222; font-size: 0.9rem; }
+
+        .block-form { max-width: 400px; background: var(--card-bg); padding: 30px; border-radius: 20px; border: 1px dashed var(--gold); }
+        
+        input, select { 
+            width: 100%; padding: 15px; background: #000; border: 1px solid #333; 
+            color: white; border-radius: 12px; margin-bottom: 15px; outline: none; transition: 0.3s;
+        }
+        input:focus { border-color: var(--gold); }
+        .primary-btn { 
+            background: var(--gold); color: #000; width: 100%; padding: 15px; 
+            border-radius: 12px; border: none; font-weight: 800; cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .error-msg { color: var(--error); font-size: 0.85rem; margin-bottom: 15px; display: none; animation: shake 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+        @media (max-width: 900px) {
+            #sidebar { width: 80px; padding: 20px 10px; }
+            #sidebar span { display: none; }
+            #main-wrapper { margin-left: 80px; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="login-card">
+            <i class="fas fa-crown"></i>
+            <h2 style="font-family: 'Montserrat'; margin-bottom: 25px; text-transform: uppercase;">Barbearia do Miguel</h2>
+            
+            <div class="password-container">
+                <input type="password" id="pass-input" placeholder="Senha do Miguel">
+                <i class="fas fa-eye toggle-password" id="toggleEye"></i>
+            </div>
+
+            <div id="error-text" class="error-msg">Acesso negado. Tente novamente.</div>
+            <button class="primary-btn" id="login-btn">Entrar</button>
+        </div>
+    </div>
+
+    <nav id="sidebar">
+        <div style="text-align: center; margin-bottom: 40px; color: var(--gold); font-weight: 800; font-size: 1.2rem;">
+            M<span style="color: white;">PRO</span>
+        </div>
+        <div class="nav-link active" onclick="showSection('agenda', this)">
+            <i class="fas fa-calendar-alt"></i> <span>Agenda</span>
+        </div>
+        <div class="nav-link" onclick="showSection('faturamento', this)">
+            <i class="fas fa-dollar-sign"></i> <span>Faturamento</span>
+        </div>
+        <div class="nav-link" onclick="showSection('bloqueio', this)">
+            <i class="fas fa-ban"></i> <span>Bloqueios</span>
+        </div>
+        <div class="nav-link" style="margin-top: auto; color: #ff4d4d;" onclick="location.reload()">
+            <i class="fas fa-sign-out-alt"></i> <span>Sair</span>
+        </div>
+    </nav>
+
+    <main id="main-wrapper">
+        <section id="agenda" class="view-section active">
+            <div class="header-main">
+                <h1>Visão Geral da Agenda</h1>
+                <p style="color: var(--text-muted)">Controle seus atendimentos de hoje e próximos dias.</p>
+            </div>
+            <div class="stats-row">
+                <div class="stat-card"><h3>Atendimentos Hoje</h3><p id="count-hoje">0</p></div>
+                <div class="stat-card"><h3>Total Pendentes</h3><p id="count-pendentes">0</p></div>
+                <div class="stat-card"><h3>Estimativa do Dia</h3><p id="receita-hoje">R$ 0,00</p></div>
+            </div>
+            <h2 style="font-size: 1rem; color: var(--gold); margin-bottom: 20px; text-transform: uppercase;">Próximos Clientes</h2>
+            <div id="lista-agendamentos"></div>
+        </section>
+
+        <section id="faturamento" class="view-section">
+            <div class="header-main">
+                <h1>Gestão Financeira</h1>
+                <p style="color: var(--text-muted)">Acompanhe quanto você está ganhando.</p>
+            </div>
+            <div class="stats-row">
+                <div class="stat-card"><h3>Total Acumulado</h3><p id="receita-total" style="color: var(--success)">R$ 0,00</p></div>
+            </div>
+            <table class="finance-table">
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Data</th>
+                        <th>Serviço</th>
+                        <th>Valor</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-faturamento"></tbody>
+            </table>
+        </section>
+
+        <section id="bloqueio" class="view-section">
+            <div class="header-main">
+                <h1>Gerenciar Folgas</h1>
+                <p style="color: var(--text-muted)">Bloqueie horários para almoço, cursos ou descanso.</p>
+            </div>
+            <div class="block-form">
+                <label style="font-size: 0.8rem; color: var(--gold)">DATA DO BLOQUEIO</label>
+                <input type="date" id="block-date">
+                <label style="font-size: 0.8rem; color: var(--gold)">HORÁRIO</label>
+                <input type="time" id="block-time">
+                <button class="primary-btn" id="btn-bloquear">BLOQUEAR AGORA NO SITE</button>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+     const firebaseConfig = {
+  apiKey: "AIzaSyA4sfH02qz0XLzdFnQpQv8SHzOvZcSb0U4",
+  authDomain: "barbearia-do-miguel.firebaseapp.com",
+  projectId: "barbearia-do-miguel",
+  storageBucket: "barbearia-do-miguel.firebasestorage.app",
+  messagingSenderId: "271858732751",
+  appId: "1:271858732751:web:661f53eea67e3870daf1ba"
+};
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        
+        const passInput = document.getElementById('pass-input');
+        const toggleEye = document.getElementById('toggleEye');
+
+        toggleEye.addEventListener('click', () => {
+            const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passInput.setAttribute('type', type);
+            toggleEye.classList.toggle('fa-eye');
+            toggleEye.classList.toggle('fa-eye-slash');
+        });
+
+        
+        window.showSection = (id, el) => {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            el.classList.add('active');
+        };
+
+        
+        document.getElementById('login-btn').addEventListener('click', () => {
+            if(passInput.value === "barbearia26") {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('sidebar').style.display = 'flex';
+                document.getElementById('main-wrapper').style.display = 'block';
+                iniciarDashboard();
+            } else {
+                document.getElementById('error-text').style.display = 'block';
+                setTimeout(() => document.getElementById('error-text').style.display = 'none', 2000);
+            }
+        });
+
+        function iniciarDashboard() {
+            const q = query(collection(db, "agendamentos"), orderBy("data", "asc"), orderBy("hora", "asc"));
+            onSnapshot(q, (snapshot) => {
+                const lista = document.getElementById('lista-agendamentos');
+                const tabela = document.getElementById('tabela-faturamento');
+                lista.innerHTML = ""; tabela.innerHTML = "";
+                let pendentes = 0, hojeCount = 0, totalGeral = 0, totalHoje = 0;
+                const hojeStr = new Date().toLocaleDateString('pt-BR');
+                snapshot.forEach((snapshotDoc) => {
+                    const ag = snapshotDoc.data();
+                    const id = snapshotDoc.id;
+                    const valorNum = parseFloat(ag.valor.replace("R$ ","").replace(",","."));
+                    if(ag.status === "concluido") {
+                        totalGeral += valorNum;
+                        tabela.innerHTML += `<tr><td>${ag.cliente}</td><td>${ag.data}</td><td>${ag.servico}</td><td style="color:var(--success)">R$ ${valorNum.toFixed(2)}</td></tr>`;
+                    } else {
+                        pendentes++;
+                        if(ag.data === hojeStr) { hojeCount++; totalHoje += valorNum; }
+                        lista.innerHTML += `
+                            <div class="booking-item">
+                                <div class="client-meta">
+                                    <b>${ag.cliente}</b>
+                                    <span>${ag.data} às ${ag.hora} — ${ag.servico || 'BLOQUEIO'}</span>
+                                </div>
+                                <div class="action-btns">
+                                    ${ag.tipo !== 'bloqueio' ? `<button class="circle-btn btn-check" onclick="finalizarCorte('${id}')"><i class="fas fa-check"></i></button>` : ''}
+                                    <button class="circle-btn btn-trash" onclick="cancelarCorte('${id}')"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>`;
+                    }
+                });
+                document.getElementById('count-hoje').innerText = hojeCount;
+                document.getElementById('count-pendentes').innerText = pendentes;
+                document.getElementById('receita-hoje').innerText = "R$ " + totalHoje.toFixed(2).replace(".",",");
+                document.getElementById('receita-total').innerText = "R$ " + totalGeral.toFixed(2).replace(".",",");
+            });
+        }
+
+        document.getElementById('btn-bloquear').addEventListener('click', async () => {
+            const data = document.getElementById('block-date').value;
+            const hora = document.getElementById('block-time').value;
+            if(!data || !hora) return;
+            const dataFmt = data.split('-').reverse().join('/');
+            await addDoc(collection(db, "agendamentos"), { cliente: "INDISPONÍVEL", data: dataFmt, hora: hora, tipo: "bloqueio", status: "pendente", valor: "R$ 0,00" });
+            alert("Bloqueado!");
+        });
+
+        window.finalizarCorte = async (id) => await updateDoc(doc(db, "agendamentos", id), { status: "concluido" });
+        window.cancelarCorte = async (id) => confirm("Liberar horário?") && await deleteDoc(doc(db, "agendamentos", id));
+    </script>
+</body>
+</html>
