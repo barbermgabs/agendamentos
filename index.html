@@ -222,7 +222,7 @@
             document.getElementById('aviso-agenda').style.display = 'none';
         }
 
-        function finalizar() {
+      function finalizar() {
             if(!estado.servico || !estado.data || !estado.hora) {
                 const aviso = document.getElementById('aviso-agenda');
                 aviso.style.display = 'block';
@@ -238,6 +238,7 @@
                 data: estado.data,
                 hora: estado.hora,
                 valor: estado.valor,
+                status: "pendente", // ADICIONEI ESTA LINHA AQUI
                 dataRegistro: new Date()
             }).then(() => {
                 console.log("Agendamento salvo no Firebase!");
@@ -259,6 +260,7 @@
             document.getElementById('etapa-3').classList.add('ativa');
         }
 
+        
         function gerarDatas() {
             const container = document.getElementById('calendar');
             const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
