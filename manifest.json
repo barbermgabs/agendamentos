@@ -1,20 +1,20 @@
 {
   "name": "Miguel Pro - Agendar Horário",
-  "short_name": "AgendaMiguel",
+  "short_name": "Agenda Miguel",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#d4af37",
   "icons": [
     {
-     "src": "logo196.png",
-"sizes": "196x196",
-"type": "image/png"
+      "src": "logo196.png",
+      "sizes": "196x196",
+      "type": "image/png"
     },
     {
-     "src": "logo512.png",
-"sizes": "512x512",
-"type": "image/png"
+      "src": "logo512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }
