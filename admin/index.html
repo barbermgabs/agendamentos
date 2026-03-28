@@ -6,15 +6,6 @@
     <title>Miguel Pro | Barber Management</title>
     
     <link rel="manifest" href="manifest.json">
-
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-          .then(() => console.log("PWA Admin (Miguel Pro) Ativo!"))
-          .catch(err => console.log("Erro no PWA do Admin:", err));
-      }
-    </script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 
@@ -32,12 +23,42 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { background: var(--dark-bg); color: white; min-height: 100vh; display: flex; }
+        body { background: var(--dark-bg); color: white; min-height: 100vh; display: flex; overflow-x: hidden; }
 
-        #login-overlay {
-            position: fixed; inset: 0; background: #000; z-index: 10000;
-            display: flex; align-items: center; justify-content: center;
+        /* --- ESTILO DO TOAST --- */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10001; }
+        .toast {
+            background: var(--card-bg); color: white; padding: 15px 25px; border-radius: 12px;
+            border-left: 4px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
+            animation: slideIn 0.3s ease-out forwards;
         }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--error); }
+
+        /* --- NOVO MODAL DE CONFIRMAÇÃO CUSTOMIZADO --- */
+        #custom-confirm {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); 
+            display: none; align-items: center; justify-content: center; z-index: 20000;
+            backdrop-filter: blur(5px);
+        }
+        .confirm-card {
+            background: var(--sidebar-bg); border: 1px solid var(--gold);
+            padding: 30px; border-radius: 20px; width: 90%; max-width: 350px; text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .confirm-card h3 { margin-bottom: 15px; font-family: 'Montserrat'; color: var(--gold); }
+        .confirm-card p { margin-bottom: 25px; color: #ccc; font-size: 0.9rem; }
+        .confirm-btns { display: flex; gap: 10px; }
+        .confirm-btns button { flex: 1; padding: 12px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; text-transform: uppercase; }
+        .btn-no { background: #333; color: white; }
+        .btn-yes { background: var(--gold); color: black; }
+
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { to { transform: translateX(20px); opacity: 0; } }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+        #login-overlay { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; }
         .login-card {
             background: var(--sidebar-bg); padding: 50px; border-radius: 30px;
             border: 1px solid var(--border); text-align: center; width: 90%; max-width: 400px;
@@ -45,31 +66,11 @@
         }
         .login-card i.fa-crown { font-size: 4rem; color: var(--gold); margin-bottom: 20px; }
         
-        .password-container {
-            position: relative;
-            width: 100%;
-            margin-bottom: 15px;
-        }
+        .password-container { position: relative; width: 100%; margin-bottom: 15px; }
         .password-container input {
-            width: 100%;
-            padding: 15px;
-            padding-right: 45px; 
-            background: #000;
-            border: 1px solid #333;
-            color: white;
-            border-radius: 12px;
-            outline: none;
-            transition: 0.3s;
-            text-align: center;
-        }
-        .password-container .toggle-password {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 1.1rem;
+            width: 100%; padding: 15px; padding-right: 45px; 
+            background: #000; border: 1px solid #333; color: white;
+            border-radius: 12px; outline: none; transition: 0.3s; text-align: center;
         }
 
         #sidebar {
@@ -118,7 +119,20 @@
         .finance-table th { background: #1f1f1f; padding: 15px; text-align: left; color: var(--gold); font-size: 0.9rem; }
         .finance-table td { padding: 15px; border-bottom: 1px solid #222; font-size: 0.9rem; }
 
-        .block-form { max-width: 400px; background: var(--card-bg); padding: 30px; border-radius: 20px; border: 1px dashed var(--gold); }
+        .block-form { max-width: 400px; background: var(--card-bg); padding: 30px; border-radius: 20px; border: 1px dashed var(--gold); margin-bottom: 40px; }
+        
+        .switch-container {
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;
+            margin-bottom: 20px; border: 1px solid var(--border);
+        }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #333; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--gold); }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .hidden { display: none; }
         
         input, select { 
             width: 100%; padding: 15px; background: #000; border: 1px solid #333; 
@@ -126,12 +140,8 @@
         }
         .primary-btn { 
             background: var(--gold); color: #000; width: 100%; padding: 15px; 
-            border-radius: 12px; border: none; font-weight: 800; cursor: pointer;
-            text-transform: uppercase;
+            border-radius: 12px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase;
         }
-
-        .error-msg { color: var(--error); font-size: 0.85rem; margin-bottom: 15px; display: none; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         @media (max-width: 900px) {
             #sidebar { width: 80px; padding: 20px 10px; }
@@ -142,17 +152,26 @@
 </head>
 <body>
 
+    <div id="toast-container"></div>
+
+    <div id="custom-confirm">
+        <div class="confirm-card">
+            <h3 id="confirm-title">Confirmar?</h3>
+            <p id="confirm-msg">Deseja realmente realizar esta ação?</p>
+            <div class="confirm-btns">
+                <button class="btn-no" id="confirm-no">Não</button>
+                <button class="btn-yes" id="confirm-yes">Sim</button>
+            </div>
+        </div>
+    </div>
+
     <div id="login-overlay">
         <div class="login-card">
             <i class="fas fa-crown"></i>
             <h2 style="font-family: 'Montserrat'; margin-bottom: 25px; text-transform: uppercase;">Barbearia do Miguel</h2>
-            
             <div class="password-container">
                 <input type="password" id="pass-input" placeholder="Senha do Miguel">
-                <i class="fas fa-eye toggle-password" id="toggleEye"></i>
             </div>
-
-            <div id="error-text" class="error-msg">Acesso negado. Tente novamente.</div>
             <button class="primary-btn" id="login-btn">Entrar</button>
         </div>
     </div>
@@ -179,7 +198,7 @@
         <section id="agenda" class="view-section active">
             <div class="header-main">
                 <h1>Visão Geral da Agenda</h1>
-                <p style="color: var(--text-muted)">Controle seus atendimentos de hoje e próximos dias.</p>
+                <p style="color: var(--text-muted)">Controle seus atendimentos de hoje.</p>
             </div>
             <div class="stats-row">
                 <div class="stat-card"><h3>Atendimentos Hoje</h3><p id="count-hoje">0</p></div>
@@ -193,20 +212,25 @@
         <section id="faturamento" class="view-section">
             <div class="header-main">
                 <h1>Gestão Financeira</h1>
-                <p style="color: var(--text-muted)">Acompanhe quanto você está ganhando.</p>
+                <p style="color: var(--text-muted)">Selecione o período para análise.</p>
+            </div>
+            <div class="block-form" style="max-width: 100%; display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; border-style: solid;">
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="font-size: 0.8rem; color: var(--gold)">DATA INÍCIO</label>
+                    <input type="text" id="filtro-inicio" placeholder="00/00/0000" maxlength="10" style="margin-bottom: 0;">
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="font-size: 0.8rem; color: var(--gold)">DATA FIM</label>
+                    <input type="text" id="filtro-fim" placeholder="00/00/0000" maxlength="10" style="margin-bottom: 0;">
+                </div>
+                <button class="primary-btn" id="btn-filtrar" style="width: auto; padding: 15px 30px;">FILTRAR</button>
             </div>
             <div class="stats-row">
-                <div class="stat-card"><h3>Total Acumulado</h3><p id="receita-total" style="color: var(--success)">R$ 0,00</p></div>
+                <div class="stat-card"><h3>Total no Período</h3><p id="receita-total" style="color: var(--success)">R$ 0,00</p></div>
+                <div class="stat-card"><h3>Cortes Realizados</h3><p id="total-cortes-periodo">0</p></div>
             </div>
             <table class="finance-table">
-                <thead>
-                    <tr>
-                        <th>Cliente</th>
-                        <th>Data</th>
-                        <th>Serviço</th>
-                        <th>Valor</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Cliente</th><th>Data</th><th>Serviço</th><th>Valor</th></tr></thead>
                 <tbody id="tabela-faturamento"></tbody>
             </table>
         </section>
@@ -214,15 +238,23 @@
         <section id="bloqueio" class="view-section">
             <div class="header-main">
                 <h1>Gerenciar Folgas</h1>
-                <p style="color: var(--text-muted)">Bloqueie horários para almoço, cursos ou descanso.</p>
+                <p style="color: var(--text-muted)">Bloqueie horários ou dias completos.</p>
             </div>
             <div class="block-form">
-                <label style="font-size: 0.8rem; color: var(--gold)">DATA DO BLOQUEIO</label>
-                <input type="date" id="block-date">
-                <label style="font-size: 0.8rem; color: var(--gold)">HORÁRIO</label>
-                <input type="time" id="block-time">
+                <div class="switch-container">
+                    <span style="font-size: 0.9rem; font-weight: 600;">Bloquear Dia Inteiro?</span>
+                    <label class="switch"><input type="checkbox" id="block-all-day"><span class="slider"></span></label>
+                </div>
+                <label style="font-size: 0.8rem; color: var(--gold)">DATA DO BLOQUEIO (DD/MM/AAAA)</label>
+                <input type="text" id="block-date" placeholder="00/00/0000" maxlength="10">
+                <div id="wrapper-hora">
+                    <label style="font-size: 0.8rem; color: var(--gold)">HORÁRIO</label>
+                    <input type="time" id="block-time">
+                </div>
                 <button class="primary-btn" id="btn-bloquear">BLOQUEAR AGORA NO SITE</button>
             </div>
+            <h2 style="font-size: 1rem; color: var(--gold); margin-top: 30px; margin-bottom: 20px; text-transform: uppercase;">Bloqueios Ativos</h2>
+            <div id="lista-bloqueios"></div>
         </section>
     </main>
 
@@ -230,19 +262,70 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const firebaseConfig = {
-  apiKey: "AIzaSyA4sfH02qz0XLzdFnQpQv8SHzOvZcSb0U4",
-  authDomain: "barbearia-do-miguel.firebaseapp.com",
-  projectId: "barbearia-do-miguel",
-  storageBucket: "barbearia-do-miguel.firebasestorage.app",
-  messagingSenderId: "271858732751",
-  appId: "1:271858732751:web:661f53eea67e3870daf1ba"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4sfH02qz0XLzdFnQpQv8SHzOvZcSb0U4",
+            authDomain: "barbearia-do-miguel.firebaseapp.com",
+            projectId: "barbearia-do-miguel",
+            storageBucket: "barbearia-do-miguel.firebasestorage.app",
+            messagingSenderId: "271858732751",
+            appId: "1:271858732751:web:661f53eea67e3870daf1ba"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- FUNÇÕES GLOBAIS (DENTRO DO WINDOW PARA O HTML ENXERGAR) ---
+        // --- SISTEMA DE CONFIRMAÇÃO CUSTOMIZADO (SUBSTITUTO DO ALERT) ---
+        const modalConfirm = document.getElementById('custom-confirm');
+        const confirmYes = document.getElementById('confirm-yes');
+        const confirmNo = document.getElementById('confirm-no');
+        const confirmTitle = document.getElementById('confirm-title');
+        const confirmMsg = document.getElementById('confirm-msg');
+
+        function perguntarMiguel(titulo, mensagem) {
+            return new Promise((resolve) => {
+                confirmTitle.innerText = titulo;
+                confirmMsg.innerText = mensagem;
+                modalConfirm.style.display = 'flex';
+
+                const fechar = (valor) => {
+                    modalConfirm.style.display = 'none';
+                    confirmYes.onclick = null;
+                    confirmNo.onclick = null;
+                    resolve(valor);
+                };
+
+                confirmYes.onclick = () => fechar(true);
+                confirmNo.onclick = () => fechar(false);
+            });
+        }
+
+        // --- UTILITÁRIOS ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.animation = 'fadeOut 0.5s ease forwards'; setTimeout(() => toast.remove(), 500); }, 3000);
+        }
+
+        function aplicarMascaraData(idCampo) {
+            const input = document.getElementById(idCampo);
+            input.addEventListener('input', (e) => {
+                let v = e.target.value.replace(/\D/g, ''); 
+                if (v.length > 8) v = v.slice(0, 8);
+                if (v.length >= 5) v = v.replace(/^(\d{2})(\d{2})(\d{0,4}).*/, '$1/$2/$3');
+                else if (v.length >= 3) v = v.replace(/^(\d{2})(\d{0,2}).*/, '$1/$2');
+                e.target.value = v;
+            });
+        }
+
+        function stringParaData(str) {
+            if(!str || str.length < 10) return null;
+            const parts = str.split('/');
+            return new Date(parts[2], parts[1] - 1, parts[0], 12, 0, 0);
+        }
+
         window.showSection = (id, el) => {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
@@ -250,88 +333,124 @@
             if(el) el.classList.add('active');
         };
 
+        // --- AÇÕES COM O NOVO MODAL ---
         window.finalizarCorte = async (id) => {
-            await updateDoc(doc(db, "agendamentos", id), { status: "concluido" });
-        };
-
-        window.cancelarCorte = async (id) => {
-            if(confirm("Liberar este horário?")) {
-                await deleteDoc(doc(db, "agendamentos", id));
+            const confirmou = await perguntarMiguel("Concluir Corte", "O cliente já pagou e o serviço foi finalizado?");
+            if (confirmou) {
+                await updateDoc(doc(db, "agendamentos", id), { status: "concluido" });
+                showToast("Atendimento finalizado! 💰");
             }
         };
 
-        // --- LOGIN E DASHBOARD ---
-        const passInput = document.getElementById('pass-input');
-        const toggleEye = document.getElementById('toggleEye');
+        window.cancelarCorte = async (id) => {
+            const confirmou = await perguntarMiguel("Remover Registro", "Deseja excluir permanentemente este item?");
+            if(confirmou) {
+                await deleteDoc(doc(db, "agendamentos", id));
+                showToast("Removido com sucesso.");
+            }
+        };
 
-        toggleEye.addEventListener('click', () => {
-            const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passInput.setAttribute('type', type);
-            toggleEye.classList.toggle('fa-eye');
-            toggleEye.classList.toggle('fa-eye-slash');
-        });
+        // --- INICIALIZAÇÃO E RENDERIZAÇÃO ---
+        let dadosLocais = [];
+        function iniciarDashboard() {
+            aplicarMascaraData('filtro-inicio');
+            aplicarMascaraData('filtro-fim');
+            aplicarMascaraData('block-date');
+            const q = query(collection(db, "agendamentos"), orderBy("data", "asc"), orderBy("hora", "asc"));
+            onSnapshot(q, (snapshot) => {
+                dadosLocais = [];
+                snapshot.forEach(doc => dadosLocais.push({id: doc.id, ...doc.data()}));
+                renderizar(null, null);
+            });
+        }
 
+        function renderizar(dataInicioStr, dataFimStr) {
+            const listaAgenda = document.getElementById('lista-agendamentos');
+            const listaBloqueios = document.getElementById('lista-bloqueios');
+            const tabelaFaturamento = document.getElementById('tabela-faturamento');
+            listaAgenda.innerHTML = ""; listaBloqueios.innerHTML = ""; tabelaFaturamento.innerHTML = "";
+
+            let pendentes = 0, hojeCount = 0, totalGeralPeriodo = 0, totalHoje = 0, cortesContador = 0;
+            const hojeStr = new Date().toLocaleDateString('pt-BR');
+            const dInicio = stringParaData(dataInicioStr);
+            const dFim = stringParaData(dataFimStr);
+
+            dadosLocais.forEach((ag) => {
+                const valorNum = parseFloat(ag.valor?.replace("R$ ","").replace(".","").replace(",",".").trim()) || 0;
+                const dataDoc = stringParaData(ag.data);
+
+                if(ag.status === "concluido") {
+                    let mostrar = true;
+                    if(dInicio && dataDoc < dInicio) mostrar = false;
+                    if(dFim && dataDoc > dFim) mostrar = false;
+                    if(mostrar) {
+                        totalGeralPeriodo += valorNum; cortesContador++;
+                        tabelaFaturamento.innerHTML += `<tr><td>${ag.cliente}</td><td>${ag.data}</td><td>${ag.servico}</td><td style="color:var(--success)">R$ ${valorNum.toFixed(2).replace(".",",")}</td></tr>`;
+                    }
+                } 
+                else if (ag.tipo === 'bloqueio') {
+                    listaBloqueios.innerHTML += `
+                        <div class="booking-item" style="border-left: 4px solid var(--error)">
+                            <div class="client-meta"><b style="color: var(--error)">BLOQUEIO: ${ag.hora}</b><span>Data: ${ag.data} — ${ag.servico}</span></div>
+                            <div class="action-btns"><button class="circle-btn btn-trash" onclick="cancelarCorte('${ag.id}')"><i class="fas fa-calendar-check"></i></button></div>
+                        </div>`;
+                }
+                else {
+                    pendentes++;
+                    if(ag.data === hojeStr) { hojeCount++; totalHoje += valorNum; }
+                    listaAgenda.innerHTML += `
+                        <div class="booking-item">
+                            <div class="client-meta"><b>${ag.cliente}</b><span>${ag.data} às ${ag.hora} — ${ag.servico}</span></div>
+                            <div class="action-btns">
+                                <button class="circle-btn btn-check" onclick="finalizarCorte('${ag.id}')"><i class="fas fa-check"></i></button>
+                                <button class="circle-btn btn-trash" onclick="cancelarCorte('${ag.id}')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>`;
+                }
+            });
+
+            document.getElementById('count-hoje').innerText = hojeCount;
+            document.getElementById('count-pendentes').innerText = pendentes;
+            document.getElementById('receita-hoje').innerText = "R$ " + totalHoje.toFixed(2).replace(".",",");
+            document.getElementById('receita-total').innerText = "R$ " + totalGeralPeriodo.toFixed(2).replace(".",",");
+            document.getElementById('total-cortes-periodo').innerText = cortesContador;
+        }
+
+        // --- BOTÕES ---
         document.getElementById('login-btn').addEventListener('click', () => {
-            if(passInput.value === "barbearia26") {
+            if(document.getElementById('pass-input').value === "barbearia26") {
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('sidebar').style.display = 'flex';
                 document.getElementById('main-wrapper').style.display = 'block';
                 iniciarDashboard();
-            } else {
-                document.getElementById('error-text').style.display = 'block';
-                setTimeout(() => document.getElementById('error-text').style.display = 'none', 2000);
+            } else { showToast("Senha incorreta!", "error"); }
+        });
+
+        document.getElementById('btn-filtrar').addEventListener('click', () => {
+            renderizar(document.getElementById('filtro-inicio').value, document.getElementById('filtro-fim').value);
+            showToast("Filtro aplicado!");
+        });
+
+        document.getElementById('btn-bloquear').addEventListener('click', async () => {
+            const dataFmt = document.getElementById('block-date').value;
+            const isDiaInteiro = document.getElementById('block-all-day').checked;
+            const hora = document.getElementById('block-time').value;
+            if(!dataFmt || dataFmt.length < 10) return showToast("Insira a data!", "error");
+            
+            const confirmou = await perguntarMiguel("Bloquear Agenda", "Deseja tornar este horário indisponível para os clientes?");
+            if (confirmou) {
+                await addDoc(collection(db, "agendamentos"), { 
+                    cliente: "INDISPONÍVEL", data: dataFmt, 
+                    hora: isDiaInteiro ? "DIA INTEIRO" : hora, 
+                    tipo: "bloqueio", status: "pendente", valor: "R$ 0,00",
+                    servico: isDiaInteiro ? "FOLGA DIA TODO" : "BLOQUEIO"
+                });
+                showToast("Bloqueio realizado! ✅");
             }
         });
 
-        function iniciarDashboard() {
-            const q = query(collection(db, "agendamentos"), orderBy("data", "asc"), orderBy("hora", "asc"));
-            onSnapshot(q, (snapshot) => {
-                const lista = document.getElementById('lista-agendamentos');
-                const tabela = document.getElementById('tabela-faturamento');
-                lista.innerHTML = ""; tabela.innerHTML = "";
-                
-                let pendentes = 0, hojeCount = 0, totalGeral = 0, totalHoje = 0;
-                const hojeStr = new Date().toLocaleDateString('pt-BR');
-
-                snapshot.forEach((doc) => {
-                    const ag = doc.data();
-                    const id = doc.id;
-                    const valorLimpo = ag.valor ? ag.valor.replace("R$ ","").replace(",",".").trim() : "0";
-                    const valorNum = parseFloat(valorLimpo) || 0;
-
-                    if(ag.status === "concluido") {
-                        totalGeral += valorNum;
-                        tabela.innerHTML += `<tr><td>${ag.cliente}</td><td>${ag.data}</td><td>${ag.servico}</td><td style="color:var(--success)">R$ ${valorNum.toFixed(2).replace(".",",")}</td></tr>`;
-                    } else {
-                        pendentes++;
-                        if(ag.data === hojeStr) { hojeCount++; totalHoje += valorNum; }
-                        lista.innerHTML += `
-                            <div class="booking-item">
-                                <div class="client-meta">
-                                    <b>${ag.cliente}</b>
-                                    <span>${ag.data} às ${ag.hora} — ${ag.servico || 'BLOQUEIO'}</span>
-                                </div>
-                                <div class="action-btns">
-                                    ${ag.tipo !== 'bloqueio' ? `<button class="circle-btn btn-check" onclick="finalizarCorte('${id}')"><i class="fas fa-check"></i></button>` : ''}
-                                    <button class="circle-btn btn-trash" onclick="cancelarCorte('${id}')"><i class="fas fa-trash"></i></button>
-                                </div>
-                            </div>`;
-                    }
-                });
-                document.getElementById('count-hoje').innerText = hojeCount;
-                document.getElementById('count-pendentes').innerText = pendentes;
-                document.getElementById('receita-hoje').innerText = "R$ " + totalHoje.toFixed(2).replace(".",",");
-                document.getElementById('receita-total').innerText = "R$ " + totalGeral.toFixed(2).replace(".",",");
-            });
-        }
-
-        document.getElementById('btn-bloquear').addEventListener('click', async () => {
-            const data = document.getElementById('block-date').value;
-            const hora = document.getElementById('block-time').value;
-            if(!data || !hora) return;
-            const dataFmt = data.split('-').reverse().join('/');
-            await addDoc(collection(db, "agendamentos"), { cliente: "INDISPONÍVEL", data: dataFmt, hora: hora, tipo: "bloqueio", status: "pendente", valor: "R$ 0,00" });
-            alert("Bloqueado!");
+        document.getElementById('block-all-day').addEventListener('change', function() {
+            document.getElementById('wrapper-hora').classList.toggle('hidden', this.checked);
         });
     </script>
 </body>
