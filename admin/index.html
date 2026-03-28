@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -352,15 +353,32 @@
 
         // --- INICIALIZAÇÃO E RENDERIZAÇÃO ---
         let dadosLocais = [];
-        function iniciarDashboard() {
+      function iniciarDashboard() {
             aplicarMascaraData('filtro-inicio');
             aplicarMascaraData('filtro-fim');
             aplicarMascaraData('block-date');
+            
             const q = query(collection(db, "agendamentos"), orderBy("data", "asc"), orderBy("hora", "asc"));
+            
+            let primeiraCarga = true; // Para não tocar som ao abrir a página com 50 cortes antigos
+
             onSnapshot(q, (snapshot) => {
+                // Verifica se houve uma ADIÇÃO de novo documento
+                if (!primeiraCarga) {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === "added") {
+                            // Toca o som diretamente pelo navegador do Miguel
+                            const audio = new Audio('https://www.myinstants.com/media/sounds/olha-a-mensagem.mp3');
+                            audio.play().catch(e => console.log("Clique na tela para liberar o som!"));
+                            showToast("🔔 Novo agendamento recebido!");
+                        }
+                    });
+                }
+
                 dadosLocais = [];
                 snapshot.forEach(doc => dadosLocais.push({id: doc.id, ...doc.data()}));
                 renderizar(null, null);
+                primeiraCarga = false; // Depois que carregou a primeira vez, as próximas tocam som
             });
         }
 
