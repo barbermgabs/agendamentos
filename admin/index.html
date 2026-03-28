@@ -368,17 +368,59 @@
                     snapshot.docChanges().forEach((change) => {
                         if (change.type === "added") {
                             // Toca o som diretamente pelo navegador do Miguel
-                            const audio = new Audio('https://www.myinstants.com/media/sounds/olha-a-mensagem.mp3');
-                            audio.play().catch(e => console.log("Clique na tela para liberar o som!"));
-                            showToast("🔔 Novo agendamento recebido!");
+                            // Variável global para o áudio
+        const somNotificacao = new Audio('https://www.myinstants.com/media/sounds/olha-a-mensagem.mp3');
+
+        // BOTÃO DE LOGIN COM DESBLOQUEIO DE ÁUDIO
+        document.getElementById('login-btn').addEventListener('click', () => {
+            if(document.getElementById('pass-input').value === "barbearia26") {
+                
+                // --- TRUQUE MESTRE ---
+                // Carregamos e damos um play/pause mudo para o navegador liberar o som
+                somNotificacao.play().then(() => {
+                    somNotificacao.pause();
+                    somNotificacao.currentTime = 0;
+                }).catch(e => console.log("Áudio aguardando interação..."));
+
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('sidebar').style.display = 'flex';
+                document.getElementById('main-wrapper').style.display = 'block';
+                iniciarDashboard();
+            } else { showToast("Senha incorreta!", "error"); }
+        });
+
+        function iniciarDashboard() {
+            aplicarMascaraData('filtro-inicio');
+            aplicarMascaraData('filtro-fim');
+            aplicarMascaraData('block-date');
+            
+            const q = query(collection(db, "agendamentos"), orderBy("data", "asc"), orderBy("hora", "asc"));
+            
+            let primeiraCarga = true;
+
+            onSnapshot(q, (snapshot) => {
+                if (!primeiraCarga) {
+                    let houveNovo = false;
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === "added") {
+                            houveNovo = true;
                         }
                     });
+
+                    if (houveNovo) {
+                        // Usamos a instância já "desbloqueada" no login
+                        somNotificacao.play().catch(err => {
+                            console.error("Erro ao tocar:", err);
+                            showToast("Novo agendamento! (Clique na tela para ativar o som)", "error");
+                        });
+                        showToast("🔔 Novo agendamento recebido!");
+                    }
                 }
 
                 dadosLocais = [];
                 snapshot.forEach(doc => dadosLocais.push({id: doc.id, ...doc.data()}));
                 renderizar(null, null);
-                primeiraCarga = false; // Depois que carregou a primeira vez, as próximas tocam som
+                primeiraCarga = false;
             });
         }
 
