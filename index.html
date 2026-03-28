@@ -157,10 +157,18 @@
                     <div class="summary-item">💰 Valor: <strong id="res-valor"></strong></div>
                 </div>
                 <div class="action-buttons">
-                    <a id="wa-link" href="#" target="_blank" class="btn-social wa"><i class="fab fa-whatsapp"></i> Confirmar no WhatsApp</a>
-                    <a href="https://maps.google.com" target="_blank" class="btn-social maps"><i class="fas fa-map-marker-alt"></i> Localização</a>
-                    <a href="https://instagram.com/suabearbearia" target="_blank" class="btn-social ig"><i class="fab fa-instagram"></i> Nosso Instagram</a>
-                </div>
+    <a id="wa-link" href="https://wa.me/554999279298?text=Olá! Gostaria de confirmar meu agendamento na Barbearia do Miguel." target="_blank" class="btn-social wa">
+        <i class="fab fa-whatsapp"></i> Confirmar no WhatsApp
+    </a>
+    
+    <a href="https://www.google.com/maps/@-27.2228401,-52.0370134,3a,75y,62.85h,73.11t/data=!3m7!1e1!3m5!1stx1e1xAlUONlMhJV9IkOdg!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fcb_client%3Dmaps_sv.tactile%26w%3D900%26h%3D600%26pitch%3D16.89184802515362%26panoid%3Dtx1e1xAlUONlMhJV9IkOdg%26yaw%3D62.84926271861859!7i16384!8i8192?entry=ttu&g_ep=EgoyMDI2MDMyNC4wIKXMDSoASAFQAw%3D%3D" target="_blank" class="btn-social maps">
+        <i class="fas fa-map-marker-alt"></i> Localização
+    </a>
+    
+    <a href="https://www.instagram.com/mgabs_cortes/" target="_blank" class="btn-social ig">
+        <i class="fab fa-instagram"></i> Nosso Instagram
+    </a>
+</div>
             </div>
         </div>
     </div>
@@ -254,7 +262,7 @@
             document.getElementById('res-valor').innerText = estado.valor;
 
             const msg = `Olá Miguel! Me chamo ${estado.nome}. Agendei ${estado.servico} para o dia ${estado.data} às ${estado.hora}.`;
-            document.getElementById('wa-link').href = `https://api.whatsapp.com/send?phone=5549999999999&text=${encodeURIComponent(msg)}`;
+            document.getElementById('wa-link').href = `https://api.whatsapp.com/send?phone=554999279298&text=${encodeURIComponent(msg)}`;
             
             document.getElementById('etapa-2').classList.remove('ativa');
             document.getElementById('etapa-3').classList.add('ativa');
@@ -292,9 +300,9 @@
             let slots = [];
 
             if (diaSemana >= 1 && diaSemana <= 5) {
-                slots = ["18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"];
+                slots = ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"];
             } else if (diaSemana === 6) {
-                slots = ["08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"];
+                slots = ["10:30", "11:00", "11:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"];
             }
 
             slots.forEach(h => {
