@@ -452,6 +452,29 @@
         document.getElementById('block-all-day').addEventListener('change', function() {
             document.getElementById('wrapper-hora').classList.toggle('hidden', this.checked);
         });
+
+// --- CÓDIGO PARA O ÁUDIO DE NOTIFICAÇÃO (COLE AQUI) ---
+        if ('serviceWorker' in navigator) {
+            // Registrar o Service Worker (importante para o push funcionar)
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('SW Admin ativo!'))
+                .catch(err => console.error('Erro no registro do SW:', err));
+
+            // Escutar a mensagem do sw.js para tocar o som
+            navigator.serviceWorker.addEventListener('message', event => {
+                if (event.data && event.data.type === 'PLAY_SOUND') {
+                    const audioFinal = new Audio('https://www.myinstants.com/media/sounds/olha-a-mensagem.mp3');
+                    audioFinal.play().catch(err => {
+                        console.warn("Autoplay bloqueado. Clique na página para liberar o som!", err);
+                        // Opcional: mostrar um aviso visual que o som foi bloqueado
+                        showToast("Novo agendamento! (Som bloqueado pelo navegador)", "error");
+                    });
+                }
+            });
+        }
+
+
+        
     </script>
 </body>
 </html>
