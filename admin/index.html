@@ -281,21 +281,18 @@
     // Variável para verificar se o áudio foi desbloqueado pelo usuário
     let audioDesbloqueado = false;
 
-    function tocarNotificacao() {
-        if (!audioDesbloqueado) {
-            console.warn("Áudio ainda não foi desbloqueado por interação.");
-            return;
-        }
+// --- SISTEMA DE ÁUDIO REFORÇADO ---
+const somNotificacao = new Audio('Olha a mensagem - vytynhw oliveira (youtube).mp3'); 
+somNotificacao.preload = 'auto';
+let audioLiberado = false;
+
+// Função mestre para tocar
+function tocarNotificacao() {
+    if (audioLiberado) {
         somNotificacao.currentTime = 0;
-        somNotificacao.volume = 1.0;
-        // O play() retorna uma promessa, tratamos o erro caso o navegador bloqueie
-        const playPromise = somNotificacao.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.error("Erro ao tocar áudio:", error);
-            });
-        }
+        somNotificacao.play().catch(e => console.error("Erro ao tocar:", e));
     }
+}
 
     // --- FUNÇÕES DE INTERFACE ---
     const modalConfirm = document.getElementById('custom-confirm');
@@ -438,21 +435,26 @@
         document.getElementById('total-cortes-periodo').innerText = cortesContador;
     }
 
-    // --- EVENTO DE LOGIN (DESBLOQUEIO DO SOM) ---
-    document.getElementById('login-btn').addEventListener('click', () => {
-        if(document.getElementById('pass-input').value === "barbearia26") {
-            
-            // ESSENCIAL: Toca um som mudo ou muito curto aqui para "avisar" ao navegador
-            // que este site tem permissão para usar o alto-falante.
-            somNotificacao.play().then(() => {
-                somNotificacao.pause();
-                somNotificacao.currentTime = 0;
-                audioDesbloqueado = true; // Agora as notificações futuras funcionarão
-                console.log("Áudio autorizado pelo usuário.");
-            }).catch(e => {
-                console.error("Navegador impediu o áudio inicial:", e);
-                // Se falhar aqui, o usuário precisa clicar em qualquer lugar da tela depois
-            });
+    
+   document.getElementById('login-btn').addEventListener('click', () => {
+    if(document.getElementById('pass-input').value === "barbearia26") {
+        
+      
+        somNotificacao.play().then(() => {
+            somNotificacao.pause();
+            somNotificacao.currentTime = 0;
+            audioLiberado = true; // Liberou geral!
+            console.log("Áudio desbloqueado com sucesso!");
+        }).catch(e => console.log("Ainda bloqueado:", e));
+
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('sidebar').style.display = 'flex';
+        document.getElementById('main-wrapper').style.display = 'block';
+        iniciarDashboard();
+    } else { 
+        showToast("Senha incorreta!", "error"); 
+    }
+});
 
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('sidebar').style.display = 'flex';
