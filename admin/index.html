@@ -8,7 +8,8 @@
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>💈</text></svg>">
+    
     <style>
         :root {
             --gold: #d4af37;
@@ -25,7 +26,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { background: var(--dark-bg); color: white; min-height: 100vh; display: flex; overflow-x: hidden; }
 
-        /* --- TOAST --- */
+        
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10001; }
         .toast {
             background: var(--card-bg); color: white; padding: 15px 25px; border-radius: 12px;
@@ -36,7 +37,6 @@
         .toast.success { border-left-color: var(--success); }
         .toast.error { border-left-color: var(--error); }
 
-        /* --- MODAL CONFIRMAÇÃO --- */
         #custom-confirm {
             position: fixed; inset: 0; background: rgba(0,0,0,0.85); 
             display: none; align-items: center; justify-content: center; z-index: 20000;
