@@ -259,199 +259,232 @@
     </main>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyA4sfH02qz0XLzdFnQpQv8SHzOvZcSb0U4",
-            authDomain: "barbearia-do-miguel.firebaseapp.com",
-            projectId: "barbearia-do-miguel",
-            storageBucket: "barbearia-do-miguel.firebasestorage.app",
-            messagingSenderId: "271858732751",
-            appId: "1:271858732751:web:661f53eea67e3870daf1ba"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyA4sfH02qz0XLzdFnQpQv8SHzOvZcSb0U4",
+        authDomain: "barbearia-do-miguel.firebaseapp.com",
+        projectId: "barbearia-do-miguel",
+        storageBucket: "barbearia-do-miguel.firebasestorage.app",
+        messagingSenderId: "271858732751",
+        appId: "1:271858732751:web:661f53eea67e3870daf1ba"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        // --- SISTEMA DE CONFIRMAÇÃO CUSTOMIZADO (SUBSTITUTO DO ALERT) ---
-        const modalConfirm = document.getElementById('custom-confirm');
-        const confirmYes = document.getElementById('confirm-yes');
-        const confirmNo = document.getElementById('confirm-no');
-        const confirmTitle = document.getElementById('confirm-title');
-        const confirmMsg = document.getElementById('confirm-msg');
+    // --- CONFIGURAÇÃO DE ÁUDIO ---
+    // Link direto para um som de notificação (pode trocar por qualquer .mp3 direto)
+    const somNotificacao = new Audio('https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3');
+    somNotificacao.preload = 'auto';
 
-        function perguntarMiguel(titulo, mensagem) {
-            return new Promise((resolve) => {
-                confirmTitle.innerText = titulo;
-                confirmMsg.innerText = mensagem;
-                modalConfirm.style.display = 'flex';
+    // --- SISTEMA DE CONFIRMAÇÃO ---
+    const modalConfirm = document.getElementById('custom-confirm');
+    const confirmYes = document.getElementById('confirm-yes');
+    const confirmNo = document.getElementById('confirm-no');
+    const confirmTitle = document.getElementById('confirm-title');
+    const confirmMsg = document.getElementById('confirm-msg');
 
-                const fechar = (valor) => {
-                    modalConfirm.style.display = 'none';
-                    confirmYes.onclick = null;
-                    confirmNo.onclick = null;
-                    resolve(valor);
-                };
+    function perguntarMiguel(titulo, mensagem) {
+        return new Promise((resolve) => {
+            confirmTitle.innerText = titulo;
+            confirmMsg.innerText = mensagem;
+            modalConfirm.style.display = 'flex';
+            const fechar = (valor) => {
+                modalConfirm.style.display = 'none';
+                confirmYes.onclick = null;
+                confirmNo.onclick = null;
+                resolve(valor);
+            };
+            confirmYes.onclick = () => fechar(true);
+            confirmNo.onclick = () => fechar(false);
+        });
+    }
 
-                confirmYes.onclick = () => fechar(true);
-                confirmNo.onclick = () => fechar(false);
-            });
-        }
+    // --- UTILITÁRIOS ---
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i> <span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => { toast.style.animation = 'fadeOut 0.5s ease forwards'; setTimeout(() => toast.remove(), 500); }, 3000);
+    }
 
-        // --- UTILITÁRIOS ---
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i> <span>${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => { toast.style.animation = 'fadeOut 0.5s ease forwards'; setTimeout(() => toast.remove(), 500); }, 3000);
-        }
+    function aplicarMascaraData(idCampo) {
+        const input = document.getElementById(idCampo);
+        input.addEventListener('input', (e) => {
+            let v = e.target.value.replace(/\D/g, ''); 
+            if (v.length > 8) v = v.slice(0, 8);
+            if (v.length >= 5) v = v.replace(/^(\d{2})(\d{2})(\d{0,4}).*/, '$1/$2/$3');
+            else if (v.length >= 3) v = v.replace(/^(\d{2})(\d{0,2}).*/, '$1/$2');
+            e.target.value = v;
+        });
+    }
 
-        function aplicarMascaraData(idCampo) {
-            const input = document.getElementById(idCampo);
-            input.addEventListener('input', (e) => {
-                let v = e.target.value.replace(/\D/g, ''); 
-                if (v.length > 8) v = v.slice(0, 8);
-                if (v.length >= 5) v = v.replace(/^(\d{2})(\d{2})(\d{0,4}).*/, '$1/$2/$3');
-                else if (v.length >= 3) v = v.replace(/^(\d{2})(\d{0,2}).*/, '$1/$2');
-                e.target.value = v;
-            });
-        }
+    function stringParaData(str) {
+        if(!str || str.length < 10) return null;
+        const parts = str.split('/');
+        return new Date(parts[2], parts[1] - 1, parts[0], 12, 0, 0);
+    }
 
-        function stringParaData(str) {
-            if(!str || str.length < 10) return null;
-            const parts = str.split('/');
-            return new Date(parts[2], parts[1] - 1, parts[0], 12, 0, 0);
-        }
+    window.showSection = (id, el) => {
+        document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(el) el.classList.add('active');
+    };
 
-        window.showSection = (id, el) => {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            if(el) el.classList.add('active');
-        };
+    // --- LÓGICA DO DASHBOARD ---
+    let dadosLocais = [];
+    let primeiraCarga = true; // Essencial para o áudio não tocar ao abrir o app
 
-        // --- AÇÕES COM O NOVO MODAL ---
-        window.finalizarCorte = async (id) => {
-            const confirmou = await perguntarMiguel("Concluir Corte", "O cliente já pagou e o serviço foi finalizado?");
-            if (confirmou) {
-                await updateDoc(doc(db, "agendamentos", id), { status: "concluido" });
-                showToast("Atendimento finalizado! 💰");
-            }
-        };
-
-        window.cancelarCorte = async (id) => {
-            const confirmou = await perguntarMiguel("Remover Registro", "Deseja excluir permanentemente este item?");
-            if(confirmou) {
-                await deleteDoc(doc(db, "agendamentos", id));
-                showToast("Removido com sucesso.");
-            }
-        };
-
-        // --- INICIALIZAÇÃO E RENDERIZAÇÃO ---
-        let dadosLocais = [];
-        function iniciarDashboard() {
-            aplicarMascaraData('filtro-inicio');
-            aplicarMascaraData('filtro-fim');
-            aplicarMascaraData('block-date');
-            const q = query(collection(db, "agendamentos"), orderBy("data", "asc"), orderBy("hora", "asc"));
-            onSnapshot(q, (snapshot) => {
-                dadosLocais = [];
-                snapshot.forEach(doc => dadosLocais.push({id: doc.id, ...doc.data()}));
-                renderizar(null, null);
-            });
-        }
-
-        function renderizar(dataInicioStr, dataFimStr) {
-            const listaAgenda = document.getElementById('lista-agendamentos');
-            const listaBloqueios = document.getElementById('lista-bloqueios');
-            const tabelaFaturamento = document.getElementById('tabela-faturamento');
-            listaAgenda.innerHTML = ""; listaBloqueios.innerHTML = ""; tabelaFaturamento.innerHTML = "";
-
-            let pendentes = 0, hojeCount = 0, totalGeralPeriodo = 0, totalHoje = 0, cortesContador = 0;
-            const hojeStr = new Date().toLocaleDateString('pt-BR');
-            const dInicio = stringParaData(dataInicioStr);
-            const dFim = stringParaData(dataFimStr);
-
-            dadosLocais.forEach((ag) => {
-                const valorNum = parseFloat(ag.valor?.replace("R$ ","").replace(".","").replace(",",".").trim()) || 0;
-                const dataDoc = stringParaData(ag.data);
-
-                if(ag.status === "concluido") {
-                    let mostrar = true;
-                    if(dInicio && dataDoc < dInicio) mostrar = false;
-                    if(dFim && dataDoc > dFim) mostrar = false;
-                    if(mostrar) {
-                        totalGeralPeriodo += valorNum; cortesContador++;
-                        tabelaFaturamento.innerHTML += `<tr><td>${ag.cliente}</td><td>${ag.data}</td><td>${ag.servico}</td><td style="color:var(--success)">R$ ${valorNum.toFixed(2).replace(".",",")}</td></tr>`;
+    function iniciarDashboard() {
+        aplicarMascaraData('filtro-inicio');
+        aplicarMascaraData('filtro-fim');
+        aplicarMascaraData('block-date');
+        
+        const q = query(collection(db, "agendamentos"), orderBy("data", "asc"), orderBy("hora", "asc"));
+        
+        onSnapshot(q, (snapshot) => {
+            // Verifica se há novos documentos após a carga inicial
+            if (!primeiraCarga) {
+                snapshot.docChanges().forEach((change) => {
+                    // Toca o som apenas se um documento NOVO for adicionado
+                    if (change.type === "added") {
+                        const novoAgendamento = change.doc.data();
+                        // Evita tocar som para bloqueios, apenas agendamentos reais
+                        if (novoAgendamento.tipo !== 'bloqueio') {
+                            somNotificacao.play().catch(e => console.warn("Interação necessária para som:", e));
+                            showToast("🔔 Novo Agendamento de " + novoAgendamento.cliente);
+                        }
                     }
-                } 
-                else if (ag.tipo === 'bloqueio') {
-                    listaBloqueios.innerHTML += `
-                        <div class="booking-item" style="border-left: 4px solid var(--error)">
-                            <div class="client-meta"><b style="color: var(--error)">BLOQUEIO: ${ag.hora}</b><span>Data: ${ag.data} — ${ag.servico}</span></div>
-                            <div class="action-btns"><button class="circle-btn btn-trash" onclick="cancelarCorte('${ag.id}')"><i class="fas fa-calendar-check"></i></button></div>
-                        </div>`;
-                }
-                else {
-                    pendentes++;
-                    if(ag.data === hojeStr) { hojeCount++; totalHoje += valorNum; }
-                    listaAgenda.innerHTML += `
-                        <div class="booking-item">
-                            <div class="client-meta"><b>${ag.cliente}</b><span>${ag.data} às ${ag.hora} — ${ag.servico}</span></div>
-                            <div class="action-btns">
-                                <button class="circle-btn btn-check" onclick="finalizarCorte('${ag.id}')"><i class="fas fa-check"></i></button>
-                                <button class="circle-btn btn-trash" onclick="cancelarCorte('${ag.id}')"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>`;
-                }
-            });
-
-            document.getElementById('count-hoje').innerText = hojeCount;
-            document.getElementById('count-pendentes').innerText = pendentes;
-            document.getElementById('receita-hoje').innerText = "R$ " + totalHoje.toFixed(2).replace(".",",");
-            document.getElementById('receita-total').innerText = "R$ " + totalGeralPeriodo.toFixed(2).replace(".",",");
-            document.getElementById('total-cortes-periodo').innerText = cortesContador;
-        }
-
-        // --- BOTÕES ---
-        document.getElementById('login-btn').addEventListener('click', () => {
-            if(document.getElementById('pass-input').value === "barbearia26") {
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('sidebar').style.display = 'flex';
-                document.getElementById('main-wrapper').style.display = 'block';
-                iniciarDashboard();
-            } else { showToast("Senha incorreta!", "error"); }
-        });
-
-        document.getElementById('btn-filtrar').addEventListener('click', () => {
-            renderizar(document.getElementById('filtro-inicio').value, document.getElementById('filtro-fim').value);
-            showToast("Filtro aplicado!");
-        });
-
-        document.getElementById('btn-bloquear').addEventListener('click', async () => {
-            const dataFmt = document.getElementById('block-date').value;
-            const isDiaInteiro = document.getElementById('block-all-day').checked;
-            const hora = document.getElementById('block-time').value;
-            if(!dataFmt || dataFmt.length < 10) return showToast("Insira a data!", "error");
-            
-            const confirmou = await perguntarMiguel("Bloquear Agenda", "Deseja tornar este horário indisponível para os clientes?");
-            if (confirmou) {
-                await addDoc(collection(db, "agendamentos"), { 
-                    cliente: "INDISPONÍVEL", data: dataFmt, 
-                    hora: isDiaInteiro ? "DIA INTEIRO" : hora, 
-                    tipo: "bloqueio", status: "pendente", valor: "R$ 0,00",
-                    servico: isDiaInteiro ? "FOLGA DIA TODO" : "BLOQUEIO"
                 });
-                showToast("Bloqueio realizado! ✅");
+            }
+
+            dadosLocais = [];
+            snapshot.forEach(doc => dadosLocais.push({id: doc.id, ...doc.data()}));
+            renderizar(null, null);
+            primeiraCarga = false; // Libera o som para as próximas atualizações
+        });
+    }
+
+    function renderizar(dataInicioStr, dataFimStr) {
+        const listaAgenda = document.getElementById('lista-agendamentos');
+        const listaBloqueios = document.getElementById('lista-bloqueios');
+        const tabelaFaturamento = document.getElementById('tabela-faturamento');
+        listaAgenda.innerHTML = ""; listaBloqueios.innerHTML = ""; tabelaFaturamento.innerHTML = "";
+
+        let pendentes = 0, hojeCount = 0, totalGeralPeriodo = 0, totalHoje = 0, cortesContador = 0;
+        const hojeStr = new Date().toLocaleDateString('pt-BR');
+        const dInicio = stringParaData(dataInicioStr);
+        const dFim = stringParaData(dataFimStr);
+
+        dadosLocais.forEach((ag) => {
+            const valorNum = parseFloat(ag.valor?.replace("R$ ","").replace(".","").replace(",",".").trim()) || 0;
+            const dataDoc = stringParaData(ag.data);
+
+            if(ag.status === "concluido") {
+                let mostrar = true;
+                if(dInicio && dataDoc < dInicio) mostrar = false;
+                if(dFim && dataDoc > dFim) mostrar = false;
+                if(mostrar) {
+                    totalGeralPeriodo += valorNum; cortesContador++;
+                    tabelaFaturamento.innerHTML += `<tr><td>${ag.cliente}</td><td>${ag.data}</td><td>${ag.servico}</td><td style="color:var(--success)">R$ ${valorNum.toFixed(2).replace(".",",")}</td></tr>`;
+                }
+            } 
+            else if (ag.tipo === 'bloqueio') {
+                listaBloqueios.innerHTML += `
+                    <div class="booking-item" style="border-left: 4px solid var(--error)">
+                        <div class="client-meta"><b style="color: var(--error)">BLOQUEIO: ${ag.hora}</b><span>Data: ${ag.data} — ${ag.servico}</span></div>
+                        <div class="action-btns"><button class="circle-btn btn-trash" onclick="cancelarCorte('${ag.id}')"><i class="fas fa-calendar-check"></i></button></div>
+                    </div>`;
+            }
+            else {
+                pendentes++;
+                if(ag.data === hojeStr) { hojeCount++; totalHoje += valorNum; }
+                listaAgenda.innerHTML += `
+                    <div class="booking-item">
+                        <div class="client-meta"><b>${ag.cliente}</b><span>${ag.data} às ${ag.hora} — ${ag.servico}</span></div>
+                        <div class="action-btns">
+                            <button class="circle-btn btn-check" onclick="finalizarCorte('${ag.id}')"><i class="fas fa-check"></i></button>
+                            <button class="circle-btn btn-trash" onclick="cancelarCorte('${ag.id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>`;
             }
         });
 
-        document.getElementById('block-all-day').addEventListener('change', function() {
-            document.getElementById('wrapper-hora').classList.toggle('hidden', this.checked);
-        });
+        document.getElementById('count-hoje').innerText = hojeCount;
+        document.getElementById('count-pendentes').innerText = pendentes;
+        document.getElementById('receita-hoje').innerText = "R$ " + totalHoje.toFixed(2).replace(".",",");
+        document.getElementById('receita-total').innerText = "R$ " + totalGeralPeriodo.toFixed(2).replace(".",",");
+        document.getElementById('total-cortes-periodo').innerText = cortesContador;
+    }
+
+    // --- EVENTOS DE BOTÃO ---
+
+    // LOGIN COM DESBLOQUEIO DE ÁUDIO (MUITO IMPORTANTE)
+    document.getElementById('login-btn').addEventListener('click', () => {
+        if(document.getElementById('pass-input').value === "barbearia26") {
+            
+            // Tenta tocar e pausar o som no momento do clique para "liberar" o navegador
+            somNotificacao.play().then(() => {
+                somNotificacao.pause();
+                somNotificacao.currentTime = 0;
+            }).catch(e => console.log("Áudio aguardando liberação..."));
+
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'flex';
+            document.getElementById('main-wrapper').style.display = 'block';
+            iniciarDashboard();
+        } else { showToast("Senha incorreta!", "error"); }
+    });
+
+    // Funções globais para os botões da lista
+    window.finalizarCorte = async (id) => {
+        const confirmou = await perguntarMiguel("Concluir Corte", "O cliente já pagou e o serviço foi finalizado?");
+        if (confirmou) {
+            await updateDoc(doc(db, "agendamentos", id), { status: "concluido" });
+            showToast("Atendimento finalizado! 💰");
+        }
+    };
+
+    window.cancelarCorte = async (id) => {
+        const confirmou = await perguntarMiguel("Remover Registro", "Deseja excluir permanentemente este item?");
+        if(confirmou) {
+            await deleteDoc(doc(db, "agendamentos", id));
+            showToast("Removido com sucesso.");
+        }
+    };
+
+    document.getElementById('btn-filtrar').addEventListener('click', () => {
+        renderizar(document.getElementById('filtro-inicio').value, document.getElementById('filtro-fim').value);
+        showToast("Filtro aplicado!");
+    });
+
+    document.getElementById('btn-bloquear').addEventListener('click', async () => {
+        const dataFmt = document.getElementById('block-date').value;
+        const isDiaInteiro = document.getElementById('block-all-day').checked;
+        const hora = document.getElementById('block-time').value;
+        if(!dataFmt || dataFmt.length < 10) return showToast("Insira a data!", "error");
+        
+        const confirmou = await perguntarMiguel("Bloquear Agenda", "Deseja tornar este horário indisponível para os clientes?");
+        if (confirmou) {
+            await addDoc(collection(db, "agendamentos"), { 
+                cliente: "INDISPONÍVEL", data: dataFmt, 
+                hora: isDiaInteiro ? "DIA INTEIRO" : hora, 
+                tipo: "bloqueio", status: "pendente", valor: "R$ 0,00",
+                servico: isDiaInteiro ? "FOLGA DIA TODO" : "BLOQUEIO"
+            });
+            showToast("Bloqueio realizado! ✅");
+        }
+    });
+
+    document.getElementById('block-all-day').addEventListener('change', function() {
+        document.getElementById('wrapper-hora').classList.toggle('hidden', this.checked);
+    });
+</script>
     </script>
 </body>
 </html>
