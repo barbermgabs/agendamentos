@@ -258,7 +258,7 @@
         </section>
     </main>
 
-   <script type="module">
+  <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -274,17 +274,30 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- CONFIGURAÇÃO DE ÁUDIO ---
+    // --- SISTEMA DE ÁUDIO ROBUSTO ---
     const somNotificacao = new Audio('https://files.catbox.moe/5m96v1.mp3'); 
     somNotificacao.preload = 'auto';
+    
+    // Variável para verificar se o áudio foi desbloqueado pelo usuário
+    let audioDesbloqueado = false;
 
-    // Função para tocar o som forçadamente
     function tocarNotificacao() {
+        if (!audioDesbloqueado) {
+            console.warn("Áudio ainda não foi desbloqueado por interação.");
+            return;
+        }
         somNotificacao.currentTime = 0;
         somNotificacao.volume = 1.0;
-        somNotificacao.play().catch(e => console.error("Erro ao tocar som:", e));
+        // O play() retorna uma promessa, tratamos o erro caso o navegador bloqueie
+        const playPromise = somNotificacao.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.error("Erro ao tocar áudio:", error);
+            });
+        }
     }
 
+    // --- FUNÇÕES DE INTERFACE ---
     const modalConfirm = document.getElementById('custom-confirm');
     const confirmYes = document.getElementById('confirm-yes');
     const confirmNo = document.getElementById('confirm-no');
@@ -313,7 +326,10 @@
         toast.className = `toast ${type}`;
         toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i> <span>${message}</span>`;
         container.appendChild(toast);
-        setTimeout(() => { toast.style.animation = 'fadeOut 0.5s ease forwards'; setTimeout(() => toast.remove(), 500); }, 3000);
+        setTimeout(() => { 
+            toast.style.animation = 'fadeOut 0.5s ease forwards'; 
+            setTimeout(() => toast.remove(), 500); 
+        }, 4000);
     }
 
     function aplicarMascaraData(idCampo) {
@@ -357,7 +373,6 @@
                     if (change.type === "added") {
                         const novoAgendamento = change.doc.data();
                         if (novoAgendamento.tipo !== 'bloqueio') {
-                            // Toca o som "Olha a mensagem"
                             tocarNotificacao();
                             showToast("🔔 Novo Agendamento: " + novoAgendamento.cliente);
                         }
@@ -423,15 +438,21 @@
         document.getElementById('total-cortes-periodo').innerText = cortesContador;
     }
 
+    // --- EVENTO DE LOGIN (DESBLOQUEIO DO SOM) ---
     document.getElementById('login-btn').addEventListener('click', () => {
         if(document.getElementById('pass-input').value === "barbearia26") {
             
-            // OBRIGATÓRIO: Toca e pausa para o navegador liberar o áudio
+            // ESSENCIAL: Toca um som mudo ou muito curto aqui para "avisar" ao navegador
+            // que este site tem permissão para usar o alto-falante.
             somNotificacao.play().then(() => {
                 somNotificacao.pause();
                 somNotificacao.currentTime = 0;
-                console.log("Áudio liberado pelo navegador!");
-            }).catch(e => console.log("Erro ao liberar áudio:", e));
+                audioDesbloqueado = true; // Agora as notificações futuras funcionarão
+                console.log("Áudio autorizado pelo usuário.");
+            }).catch(e => {
+                console.error("Navegador impediu o áudio inicial:", e);
+                // Se falhar aqui, o usuário precisa clicar em qualquer lugar da tela depois
+            });
 
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('sidebar').style.display = 'flex';
@@ -482,7 +503,6 @@
     document.getElementById('block-all-day').addEventListener('change', function() {
         document.getElementById('wrapper-hora').classList.toggle('hidden', this.checked);
     });
-</script>
     </script>
 </body>
 </html>
