@@ -258,7 +258,7 @@
         </section>
     </main>
 
-    <script type="module">
+   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -274,8 +274,16 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-const somNotificacao = new Audio('https://files.catbox.moe/5m96v1.mp3'); 
-somNotificacao.preload = 'auto';
+    // --- CONFIGURAÇÃO DE ÁUDIO ---
+    const somNotificacao = new Audio('https://files.catbox.moe/5m96v1.mp3'); 
+    somNotificacao.preload = 'auto';
+
+    // Função para tocar o som forçadamente
+    function tocarNotificacao() {
+        somNotificacao.currentTime = 0;
+        somNotificacao.volume = 1.0;
+        somNotificacao.play().catch(e => console.error("Erro ao tocar som:", e));
+    }
 
     const modalConfirm = document.getElementById('custom-confirm');
     const confirmYes = document.getElementById('confirm-yes');
@@ -299,7 +307,6 @@ somNotificacao.preload = 'auto';
         });
     }
 
-    
     function showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -311,6 +318,7 @@ somNotificacao.preload = 'auto';
 
     function aplicarMascaraData(idCampo) {
         const input = document.getElementById(idCampo);
+        if(!input) return;
         input.addEventListener('input', (e) => {
             let v = e.target.value.replace(/\D/g, ''); 
             if (v.length > 8) v = v.slice(0, 8);
@@ -344,21 +352,18 @@ somNotificacao.preload = 'auto';
         const q = query(collection(db, "agendamentos"), orderBy("data", "asc"), orderBy("hora", "asc"));
         
         onSnapshot(q, (snapshot) => {
-            
             if (!primeiraCarga) {
                 snapshot.docChanges().forEach((change) => {
-                    
                     if (change.type === "added") {
                         const novoAgendamento = change.doc.data();
-                        
                         if (novoAgendamento.tipo !== 'bloqueio') {
-                            somNotificacao.play().catch(e => console.warn("Interação necessária para som:", e));
-                            showToast("🔔 Novo Agendamento de " + novoAgendamento.cliente);
+                            // Toca o som "Olha a mensagem"
+                            tocarNotificacao();
+                            showToast("🔔 Novo Agendamento: " + novoAgendamento.cliente);
                         }
                     }
                 });
             }
-
             dadosLocais = [];
             snapshot.forEach(doc => dadosLocais.push({id: doc.id, ...doc.data()}));
             renderizar(null, null);
@@ -394,7 +399,7 @@ somNotificacao.preload = 'auto';
                 listaBloqueios.innerHTML += `
                     <div class="booking-item" style="border-left: 4px solid var(--error)">
                         <div class="client-meta"><b style="color: var(--error)">BLOQUEIO: ${ag.hora}</b><span>Data: ${ag.data} — ${ag.servico}</span></div>
-                        <div class="action-btns"><button class="circle-btn btn-trash" onclick="cancelarCorte('${ag.id}')"><i class="fas fa-calendar-check"></i></button></div>
+                        <div class="action-btns"><button class="circle-btn btn-trash" onclick="cancelarCorte('${ag.id}')"><i class="fas fa-trash"></i></button></div>
                     </div>`;
             }
             else {
@@ -418,17 +423,15 @@ somNotificacao.preload = 'auto';
         document.getElementById('total-cortes-periodo').innerText = cortesContador;
     }
 
-    
-
-    
     document.getElementById('login-btn').addEventListener('click', () => {
         if(document.getElementById('pass-input').value === "barbearia26") {
             
-            
+            // OBRIGATÓRIO: Toca e pausa para o navegador liberar o áudio
             somNotificacao.play().then(() => {
                 somNotificacao.pause();
                 somNotificacao.currentTime = 0;
-            }).catch(e => console.log("Áudio aguardando liberação..."));
+                console.log("Áudio liberado pelo navegador!");
+            }).catch(e => console.log("Erro ao liberar áudio:", e));
 
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('sidebar').style.display = 'flex';
@@ -437,7 +440,6 @@ somNotificacao.preload = 'auto';
         } else { showToast("Senha incorreta!", "error"); }
     });
 
-   
     window.finalizarCorte = async (id) => {
         const confirmou = await perguntarMiguel("Concluir Corte", "O cliente já pagou e o serviço foi finalizado?");
         if (confirmou) {
