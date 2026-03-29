@@ -274,12 +274,9 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- CONFIGURAÇÃO DE ÁUDIO ---
-    // Link direto para um som de notificação (pode trocar por qualquer .mp3 direto)
-    const somNotificacao = new Audio('https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3');
-    somNotificacao.preload = 'auto';
+const somNotificacao = new Audio('https://files.catbox.moe/5m96v1.mp3'); 
+somNotificacao.preload = 'auto';
 
-    // --- SISTEMA DE CONFIRMAÇÃO ---
     const modalConfirm = document.getElementById('custom-confirm');
     const confirmYes = document.getElementById('confirm-yes');
     const confirmNo = document.getElementById('confirm-no');
@@ -302,7 +299,7 @@
         });
     }
 
-    // --- UTILITÁRIOS ---
+    
     function showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -336,9 +333,8 @@
         if(el) el.classList.add('active');
     };
 
-    // --- LÓGICA DO DASHBOARD ---
     let dadosLocais = [];
-    let primeiraCarga = true; // Essencial para o áudio não tocar ao abrir o app
+    let primeiraCarga = true; 
 
     function iniciarDashboard() {
         aplicarMascaraData('filtro-inicio');
@@ -348,13 +344,13 @@
         const q = query(collection(db, "agendamentos"), orderBy("data", "asc"), orderBy("hora", "asc"));
         
         onSnapshot(q, (snapshot) => {
-            // Verifica se há novos documentos após a carga inicial
+            
             if (!primeiraCarga) {
                 snapshot.docChanges().forEach((change) => {
-                    // Toca o som apenas se um documento NOVO for adicionado
+                    
                     if (change.type === "added") {
                         const novoAgendamento = change.doc.data();
-                        // Evita tocar som para bloqueios, apenas agendamentos reais
+                        
                         if (novoAgendamento.tipo !== 'bloqueio') {
                             somNotificacao.play().catch(e => console.warn("Interação necessária para som:", e));
                             showToast("🔔 Novo Agendamento de " + novoAgendamento.cliente);
@@ -366,7 +362,7 @@
             dadosLocais = [];
             snapshot.forEach(doc => dadosLocais.push({id: doc.id, ...doc.data()}));
             renderizar(null, null);
-            primeiraCarga = false; // Libera o som para as próximas atualizações
+            primeiraCarga = false; 
         });
     }
 
@@ -422,13 +418,13 @@
         document.getElementById('total-cortes-periodo').innerText = cortesContador;
     }
 
-    // --- EVENTOS DE BOTÃO ---
+    
 
-    // LOGIN COM DESBLOQUEIO DE ÁUDIO (MUITO IMPORTANTE)
+    
     document.getElementById('login-btn').addEventListener('click', () => {
         if(document.getElementById('pass-input').value === "barbearia26") {
             
-            // Tenta tocar e pausar o som no momento do clique para "liberar" o navegador
+            
             somNotificacao.play().then(() => {
                 somNotificacao.pause();
                 somNotificacao.currentTime = 0;
@@ -441,7 +437,7 @@
         } else { showToast("Senha incorreta!", "error"); }
     });
 
-    // Funções globais para os botões da lista
+   
     window.finalizarCorte = async (id) => {
         const confirmou = await perguntarMiguel("Concluir Corte", "O cliente já pagou e o serviço foi finalizado?");
         if (confirmou) {
