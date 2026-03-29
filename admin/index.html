@@ -213,38 +213,53 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- SISTEMA DE ÁUDIO ---
-        const somNotificacao = new Audio('Olha a mensagem - vytynhw oliveira (youtube).mp3'); 
-        somNotificacao.preload = 'auto';
-        let audioLiberado = false;
+       
+      
 
-        function tocarNotificacao() {
-            if (audioLiberado) {
-                somNotificacao.currentTime = 0;
-                somNotificacao.play().catch(e => console.log("Erro som:", e));
-            }
+const somNotificacao = new Audio('https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3'); 
+somNotificacao.preload = 'auto';
+let audioLiberado = false;
+
+
+async function tocarNotificacao() {
+    if (audioLiberado) {
+        try {
+            somNotificacao.currentTime = 0;
+            await somNotificacao.play();
+        } catch (e) {
+            console.error("Erro ao tocar som. Tentando reativar...", e);
+            
+            document.onclick = () => { somNotificacao.play(); document.onclick = null; };
         }
+    }
+}
 
-        // --- LOGIN E DESBLOQUEIO ---
-        document.getElementById('login-btn').addEventListener('click', () => {
-            if(document.getElementById('pass-input').value === "barbearia26") {
-                // Desbloqueia o som no clique do Miguel
-                somNotificacao.play().then(() => {
-                    somNotificacao.pause();
-                    somNotificacao.currentTime = 0;
-                    audioLiberado = true;
-                }).catch(e => console.log("Áudio ainda bloqueado", e));
 
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('sidebar').style.display = 'flex';
-                document.getElementById('main-wrapper').style.display = 'block';
-                iniciarDashboard();
-            } else {
-                showToast("Senha incorreta!", "error");
-            }
+document.getElementById('login-btn').addEventListener('click', async () => {
+    if(document.getElementById('pass-input').value === "barbearia26") {
+        
+    
+        somNotificacao.play().then(() => {
+            somNotificacao.pause();
+            somNotificacao.currentTime = 0;
+            audioLiberado = true;
+            console.log("Áudio liberado com sucesso!");
+        }).catch(e => {
+            console.log("Erro ao liberar áudio:", e);
         });
 
-        // --- DASHBOARD E FIREBASE ---
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('sidebar').style.display = 'flex';
+        document.getElementById('main-wrapper').style.display = 'block';
+        iniciarDashboard();
+    } else {
+        showToast("Senha incorreta!", "error");
+    }
+});
+
+
+
+       
         let dadosLocais = [];
         let primeiraCarga = true;
 
@@ -309,7 +324,7 @@
             document.getElementById('total-cortes-periodo').innerText = cortesContador;
         }
 
-        // --- UTILITÁRIOS ---
+      
         window.showSection = (id, el) => {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
